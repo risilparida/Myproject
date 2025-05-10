@@ -1,0 +1,240 @@
+Task :-1
+Each section below corresponds to a different theme file, with comments explaining the logic. You can copy and paste these into your Shopify theme editor (e.g., Dawn or Debut) for testing.
+Product Card with Dynamic Badges (product-card.liquid):
+This file adds badges based on price (under ₹500 shows "Budget Pick") and stock (fewer than 5 items shows "Limited Stock").
+
+<!-- product-card.liquid -->
+{% comment %} Product Card with Dynamic Badges {% endcomment %}
+<div class="product-card">
+  <a href="{{ product.url }}">{{ product.title }}</a>
+  <p>{{ product.price | money }}</p>
+  
+  {% comment %} Badge Logic {% endcomment %}
+  {% if product.price < 50000 %} {% comment %} Price in paise: ₹500 = 50000 paise {% endcomment %}
+    <span class="badge budget-pick">Budget Pick</span>
+  {% endif %}
+  {% if product.variants.first.inventory_quantity < 5 %}
+    <span class="badge limited-stock">Limited Stock</span>
+  {% endif %}
+  
+  <img src="{{ product.featured_image | img_url: 'medium' }}" alt="{{ product.title }}">
+</div>
+Collection Page with Custom Tag Filter (collection.liquid):
+Adds a dropdown to filter products by tags like best-seller, new-arrival, or discounted, ensuring pagination works.
+<!-- collection.liquid -->
+{% comment %} Collection Page with Custom Tag Filter {% endcomment %}
+<h1>{{ collection.title }}</h1>
+
+{% comment %} Tag Filter Dropdown {% endcomment %}
+<form method="get" action="{{ collection.url }}">
+  <select name="tag" onchange="this.form.submit()">
+    <option value="">All Products</option>
+    <option value="best-seller" {% if current_tags contains 'best-seller' %}selected{% endif %}>Best Sellers</option>
+    <option value="new-arrival" {% if current_tags contains 'new-arrival' %}selected{% endif %}>New Arrivals</option>
+    <option value="discounted" {% if current_tags contains 'discounted' %}selected{% endif %}>Discounted</option>
+  </select>
+</form>
+
+{% comment %} Product Loop {% endcomment %}
+<div class="product-grid">
+  {% paginate collection.products by 12 %}
+    {% for product in collection.products %}
+      {% render 'product-card', product: product %}
+    {% endfor %}
+    {{ paginate | default_pagination }}
+  {% endpaginate %}
+</div>
+Homepage with Personalized Greeting (index.liquid):
+Shows a greeting based on the time of day: "Good Morning, Shopper!" before 12 PM, "Good Afternoon, Shopper!" between 12 PM and 6 PM, and "Good Evening, Shopper!" after 6 PM.
+
+<!-- index.liquid -->
+{% comment %} Homepage with Personalized Greeting {% endcomment %}
+{% assign hour = 'now' | date: '%H' | plus: 0 %}
+{% if hour < 12 %}
+  <h2>Good Morning, Shopper!</h2>
+{% elsif hour < 18 %}
+  <h2>Good Afternoon, Shopper!</h2>
+{% else %}
+  <h2>Good Evening, Shopper!</h2>
+{% endif %}
+
+{% comment %} Rest of the homepage content {% endcomment %}
+{% section 'featured-products' %}
+
+Cart Page with Upsell and Bonus Task (cart.liquid):
+Suggests products based on cart total (Accessories if below ₹1000, Premium if above) and includes a bonus "Buy More, Save More" message (e.g., "Spend ₹500 more for free shipping" if below ₹500).
+
+<!-- cart.liquid -->
+{% comment %} Cart Page with Upsell and Bonus Task {% endcomment %}
+<h1>Your Cart</h1>
+{% assign cart_total = cart.total_price %}
+
+{% comment %} Cart Items {% endcomment %}
+{% for item in cart.items %}
+  <div class="cart-item">
+    <p>{{ item.title }} - {{ item.quantity }} x {{ item.price | money }}</p>
+  </div>
+{% endfor %}
+<p>Total: {{ cart_total | money }}</p>
+
+{% comment %} Upsell Recommendation {% endcomment %}
+{% if cart_total < 100000 %} {% comment %} 100000 paise = ₹1000 {% endcomment %}
+  {% assign suggested_collection = collections['accessories'] %}
+{% else %}
+  {% assign suggested_collection = collections['premium'] %}
+{% endif %}
+{% if suggested_collection and suggested_collection.products.size > 0 %}
+  {% assign suggested_product = suggested_collection.products.first %}
+  <p>Recommended for you: <a href="{{ suggested_product.url }}">{{ suggested_product.title }}</a></p>
+{% endif %}
+
+{% comment %} Buy More, Save More Message (Bonus Task) {% endcomment %}
+{% assign threshold = 50000 %} {% comment %} 50000 paise = ₹500 {% endcomment %}
+{% if cart_total < threshold %}
+  {% assign difference = threshold | minus: cart_total %}
+  <p>Spend {{ difference | money }} more to get free shipping!</p>
+{% else %}
+  <p>You’ve unlocked free shipping!</p>
+{% endif %}
+
+
+Background and Context
+The assignment aims to assess proficiency in Shopify's Liquid templating language, focusing on creating dynamic and reusable components without incurring server costs. It requires working within the Shopify Theme Editor or a free development store, modifying existing themes using Liquid logic (conditions, loops, and filters), and avoiding third-party apps or paid services. The current time is 07:42 PM IST on Saturday, May 10, 2025, which is irrelevant to the task but noted for completeness.
+
+If the product price is under ₹500, show a "Budget Pick" badge. Given Shopify stores prices in paise (smallest currency unit for INR), ₹500 equals 50000 paise, so we check product.price < 50000.
+If the product has fewer than 5 items in stock, show a "Limited Stock" badge, using product.variants.first.inventory_quantity < 5 as hinted.
+If both conditions apply, display both badges, achieved through separate if statements.
+
+Implementation:
+
+<!-- product-card.liquid -->
+{% comment %} Product Card with Dynamic Badges {% endcomment %}
+<div class="product-card">
+  <a href="{{ product.url }}">{{ product.title }}</a>
+  <p>{{ product.price | money }}</p>
+  
+  {% comment %} Badge Logic {% endcomment %}
+  {% if product.price < 50000 %} {% comment %} Price in paise: ₹500 = 50000 paise {% endcomment %}
+    <span class="badge budget-pick">Budget Pick</span>
+  {% endif %}
+  {% if product.variants.first.inventory_quantity < 5 %}
+    <span class="badge limited-stock">Limited Stock</span>
+  {% endif %}
+  
+  <img src="{{ product.featured_image | img_url: 'medium' }}" alt="{{ product.title }}">
+</div>
+
+Task 2: Custom Collection Filter
+
+Objective: Add a text-based filter for products by custom tags (best-seller, new-arrival, discounted), ensuring pagination is unaffected.
+
+Details:
+
+Create a dropdown using Liquid that filters products based on tags, leveraging Shopify's URL parameter ?tag= for filtering.
+Ensure pagination works by letting Shopify handle the filtered collection, avoiding manual filtering in loops.
+
+Implementation:
+
+<!-- collection.liquid -->
+{% comment %} Collection Page with Custom Tag Filter {% endcomment %}
+<h1>{{ collection.title }}</h1>
+
+{% comment %} Tag Filter Dropdown {% endcomment %}
+<form method="get" action="{{ collection.url }}">
+  <select name="tag" onchange="this.form.submit()">
+    <option value="">All Products</option>
+    <option value="best-seller" {% if current_tags contains 'best-seller' %}selected{% endif %}>Best Sellers</option>
+    <option value="new-arrival" {% if current_tags contains 'new-arrival' %}selected{% endif %}>New Arrivals</option>
+    <option value="discounted" {% if current_tags contains 'discounted' %}selected{% endif %}>Discounted</option>
+  </select>
+</form>
+
+{% comment %} Product Loop {% endcomment %}
+<div class="product-grid">
+  {% paginate collection.products by 12 %}
+    {% for product in collection.products %}
+      {% render 'product-card', product: product %}
+    {% endfor %}
+    {{ paginate | default_pagination }}
+  {% endpaginate %}
+</div>
+
+Task 3: Personalized Greeting
+
+
+Objective: Display a personalized greeting on the homepage based on the time of day.
+
+how "Good Morning, Shopper!" before 12 PM, "Good Afternoon, Shopper!" between 12 PM and 6 PM, and "Good Evening, Shopper!" after 6 PM.
+Use now | date: "%H" to fetch the current hour and apply conditional statements.
+
+
+Implementation:
+<!-- index.liquid -->
+{% comment %} Homepage with Personalized Greeting {% endcomment %}
+{% assign hour = 'now' | date: '%H' | plus: 0 %}
+{% if hour < 12 %}
+  <h2>Good Morning, Shopper!</h2>
+{% elsif hour < 18 %}
+  <h2>Good Afternoon, Shopper!</h2>
+{% else %}
+  <h2>Good Evening, Shopper!</h2>
+{% endif %}
+
+{% comment %} Rest of the homepage content {% endcomment %}
+{% section 'featured-products' %}
+
+Research Insight: No specific external reference needed, as the implementation follows standard Liquid time-based logic, verified through [Liquid reference]([invalid URL, do not cite]).
+Task 4: Custom Upsell Section
+Objective: Display an upsell product recommendation dynamically based on cart total.
+Implementation:
+
+<!-- cart.liquid -->
+{% comment %} Cart Page with Upsell and Bonus Task {% endcomment %}
+<h1>Your Cart</h1>
+{% assign cart_total = cart.total_price %}
+
+{% comment %} Cart Items {% endcomment %}
+{% for item in cart.items %}
+  <div class="cart-item">
+    <p>{{ item.title }} - {{ item.quantity }} x {{ item.price | money }}</p>
+  </div>
+{% endfor %}
+<p>Total: {{ cart_total | money }}</p>
+
+{% comment %} Upsell Recommendation {% endcomment %}
+{% if cart_total < 100000 %} {% comment %} 100000 paise = ₹1000 {% endcomment %}
+  {% assign suggested_collection = collections['accessories'] %}
+{% else %}
+  {% assign suggested_collection = collections['premium'] %}
+{% endif %}
+{% if suggested_collection and suggested_collection.products.size > 0 %}
+  {% assign suggested_product = suggested_collection.products.first %}
+  <p>Recommended for you: <a href="{{ suggested_product.url }}">{{ suggested_product.title }}</a></p>
+{% endif %}
+
+{% comment %} Buy More, Save More Message (Bonus Task) {% endcomment %}
+{% assign threshold = 50000 %} {% comment %} 50000 paise = ₹500 {% endcomment %}
+{% if cart_total < threshold %}
+  {% assign difference = threshold | minus: cart_total %}
+  <p>Spend {{ difference | money }} more to get free shipping!</p>
+{% else %}
+  <p>You’ve unlocked free shipping!</p>
+{% endif %}
+Bonus Task: Buy More, Save More Message
+
+Details: Added a dynamic message based on cart total:
+
+If below ₹500, show "Spend [amount] more to get free shipping!" (interpreted as difference to ₹500).
+If above ₹500, show "You’ve unlocked free shipping!"
+
+
+Implementation: See above code snippet, with calculations ensuring accurate currency display.
+
+
+
+
+
+
+
+
+
